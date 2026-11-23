@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chọn Giùm Tui</title>
+<meta name="theme-color" content="#6c5ce7">
+<style>
+  :root {
+    --bg: #f6f4ff;
+    --card: #ffffff;
+    --text: #22223b;
+    --muted: #7a7a90;
+    --primary: #6c5ce7;
+    --primary-dark: #5443d6;
+    --danger: #ff6b6b;
+    --radius: 18px;
+    --shadow: 0 6px 24px rgba(80, 60, 180, .10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
+  header { text-align: center; margin: 8px 0 16px; }
+  header h1 { margin: 0; font-size: 1.8rem; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 12px; font-size: 1.05rem; }
+
+  /* Ô nhập */
+  .input-row { display: flex; gap: 8px; }
+  textarea {
+    flex: 1; resize: none; font: inherit; font-size: 16px;
+    padding: 12px 14px; border: 2px solid #e4e0ff; border-radius: 14px;
+    outline: none; min-height: 48px; max-height: 140px;
+  }
+  textarea:focus { border-color: var(--primary); }
+  button {
+    font: inherit; border: none; cursor: pointer; border-radius: 14px;
+    min-height: 48px; padding: 0 16px; font-weight: 600;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:active { background: var(--primary-dark); }
+  .btn-ghost { background: #eeebff; color: var(--primary); }
+  .hint { font-size: .8rem; color: var(--muted); margin-top: 6px; }
+
+  /* Danh sách */
+  ul { list-style: none; padding: 0; margin: 0; }
+  .opt {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid #f0eef9;
+  }
+  .opt:last-child { border-bottom: none; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .opt .name { flex: 1; word-break: break-word; }
+  .opt select {
+    font: inherit; font-size: 14px; border: 1px solid #e4e0ff;
+    border-radius: 10px; padding: 6px; background: #faf9ff;
+  }
+  .opt .del {
+    min-height: 40px; width: 40px; padding: 0;
+    background: #fff0f0; color: var(--danger);
+  }
+  .empty { color: var(--muted); text-align: center; padding: 10px 0; }
+  .list-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .list-head h2 { margin: 0; }
+  .list-head button { min-height: 36px; font-size: .85rem; }
+  .weight-label { font-size: .75rem; color: var(--muted); }
+
+  /* Tuỳ chọn */
+  .toggle { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
+  .toggle input { width: 22px; height: 22px; accent-color: var(--primary); }
+
+  /* Vòng quay */
+  .wheel-box { position: relative; width: 100%; max-width: 380px; margin: 0 auto; aspect-ratio: 1; }
+  canvas#wheel { width: 100%; height: 100%; display: block; }
+  .pointer {
+    position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 16px solid transparent;
+    border-right: 16px solid transparent; border-top: 30px solid var(--text);
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); z-index: 2;
+  }
+  #spinBtn {
+    display: block; width: 100%; margin-top: 16px; min-height: 60px;
+    font-size: 1.3rem; background: linear-gradient(135deg, #6c5ce7, #fd79a8); color: #fff;
+  }
+  #spinBtn:disabled { opacity: .6; }
+
+  /* Lịch sử */
+  .history li { padding: 6px 0; display: flex; gap: 8px; border-bottom: 1px dashed #eee; }
+  .history li:last-child { border-bottom: none; }
+  .history .time { color: var(--muted); font-size: .8rem; min-width: 48px; }
+
+  /* Kết quả */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(20, 16, 50, .55);
+    display: none; align-items: center; justify-content: center; z-index: 10; padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .result {
+    background: #fff; border-radius: 24px; padding: 28px 22px; text-align: center;
+    width: 100%; max-width: 420px; animation: pop .35s ease;
+  }
+  .result .label { color: var(--muted); }
+  .result .value { font-size: 2rem; font-weight: 800; margin: 10px 0 20px; word-break: break-word; color: var(--primary); }
+  .result .actions { display: flex; gap: 10px; }
+  .result .actions button { flex: 1; }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* Thông báo nhỏ */
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(100px);
+    background: var(--text); color: #fff; padding: 12px 18px; border-radius: 14px;
+    transition: transform .25s; z-index: 20; max-width: 90%; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; }
+  .back { display: inline-block; margin-bottom: 4px; color: var(--primary); text-decoration: none; font-size: .9rem; }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+  <a class="back" href="../">← App linh tinh</a>
+  <header>
+    <h1>🎯 Chọn Giùm Tui</h1>
+    <p>Phân vân quá? Để vòng quay quyết định!</p>
+  </header>
+
+  <!-- Nhập lựa chọn -->
+  <section class="card">
+    <div class="input-row">
+      <textarea id="input" rows="1" placeholder="Nhập lựa chọn…"></textarea>
+      <button class="btn-primary" id="addBtn">Thêm</button>
+    </div>
+    <div class="hint">Enter để thêm · Dán nhiều dòng = nhiều lựa chọn · Shift+Enter xuống dòng</div>
+  </section>
+
+  <!-- Vòng quay -->
+  <section class="card">
+    <div class="wheel-box">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="760" height="760"></canvas>
+    </div>
+    <button id="spinBtn">🎲 Quay!</button>
+  </section>
+
+  <!-- Danh sách lựa chọn -->
+  <section class="card">
+    <div class="list-head">
+      <h2>Lựa chọn (<span id="count">0</span>)</h2>
+      <button class="btn-ghost" id="clearBtn">Xoá hết</button>
+    </div>
+    <ul id="list"></ul>
+  </section>
+
+  <!-- Tuỳ chọn -->
+  <section class="card">
+    <h2>Tuỳ chọn</h2>
+    <label class="toggle"><input type="checkbox" id="removeAfter"> Loại bỏ lựa chọn sau khi được chọn</label>
+    <label class="toggle"><input type="checkbox" id="useWeight"> Dùng trọng số (ưu tiên 1–5)</label>
+  </section>
+
+  <!-- Lịch sử -->
+  <section class="card">
+    <div class="list-head">
+      <h2>Lịch sử</h2>
+      <button class="btn-ghost" id="clearHistBtn">Xoá</button>
+    </div>
+    <ul class="history" id="history"></ul>
+  </section>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="result">
+    <div class="label">✨ Quyết định là ✨</div>
+    <div class="value" id="resultText"></div>
+    <div class="actions">
+      <button class="btn-ghost" id="closeBtn">OK</button>
+      <button class="btn-primary" id="againBtn">Quay lại</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== Trạng thái & lưu trữ =====
+const STORE_KEY = 'chon-giup-tui-v1';
+const COLORS = ['#6c5ce7','#fd79a8','#00b894','#fdcb6e','#0984e3','#e17055','#00cec9','#a29bfe','#ff7675','#55efc4','#fab1a0','#74b9ff'];
+
+let state = { options: [], removeAfter: false, useWeight: false, history: [] };
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) state = Object.assign(state, JSON.parse(raw));
+  } catch (e) { /* bỏ qua nếu trình duyệt chặn localStorage */ }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+// ===== Random công bằng bằng crypto =====
+function randomFloat() {
+  const a = new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return a[0] / 4294967296; // [0, 1)
+}
+function weightOf(o) { return state.useWeight ? o.weight : 1; }
+
+// Chọn 1 chỉ số theo trọng số
+function pickIndex() {
+  const total = state.options.reduce((s, o) => s + weightOf(o), 0);
+  let r = randomFloat() * total;
+  for (let i = 0; i < state.options.length; i++) {
+    r -= weightOf(state.options[i]);
+    if (r < 0) return i;
+  }
+  return state.options.length - 1;
+}
+
+// ===== DOM =====
+const $ = id => document.getElementById(id);
+const input = $('input'), listEl = $('list'), wheel = $('wheel'), ctx = wheel.getContext('2d');
+const spinBtn = $('spinBtn');
+let rotation = 0;        // góc hiện tại của vòng quay (radian)
+let spinning = false;
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ===== Thêm / xoá lựa chọn =====
+function addFromInput() {
+  const lines = input.value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!lines.length) return;
+  lines.forEach(name => state.options.push({ name, weight: 1 }));
+  input.value = ''; autoGrow();
+  save(); render();
+}
+function removeOption(i) { state.options.splice(i, 1); save(); render(); }
+
+// ===== Vẽ danh sách =====
+function render() {
+  $('count').textContent = state.options.length;
+  $('removeAfter').checked = state.removeAfter;
+  $('useWeight').checked = state.useWeight;
+
+  listEl.innerHTML = '';
+  if (!state.options.length) {
+    listEl.innerHTML = '<li class="empty">Chưa có lựa chọn nào</li>';
+  }
+  state.options.forEach((o, i) => {
+    const li = document.createElement('li');
+    li.className = 'opt';
+    li.innerHTML = `<span class="dot" style="background:${COLORS[i % COLORS.length]}"></span>
+      <span class="name"></span>
+      ${state.useWeight ? `<select aria-label="Trọng số">${[1,2,3,4,5].map(w => `<option ${w===o.weight?'selected':''}>${w}</option>`).join('')}</select>` : ''}
+      <button class="del" aria-label="Xoá">✕</button>`;
+    li.querySelector('.name').textContent = o.name;
+    li.querySelector('.del').onclick = () => removeOption(i);
+    const sel = li.querySelector('select');
+    if (sel) sel.onchange = () => { o.weight = +sel.value; save(); drawWheel(); };
+    listEl.appendChild(li);
+  });
+
+  const h = $('history'); h.innerHTML = '';
+  if (!state.history.length) h.innerHTML = '<li class="empty">Chưa quay lần nào</li>';
+  state.history.forEach(x => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="time">${x.time}</span><span></span>`;
+    li.lastChild.textContent = x.name;
+    h.appendChild(li);
+  });
+
+  drawWheel();
+}
+
+// ===== Vẽ vòng quay =====
+function drawWheel() {
+  const W = wheel.width, c = W / 2, R = c - 8;
+  ctx.clearRect(0, 0, W, W);
+  const opts = state.options;
+
+  if (!opts.length) {
+    ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2);
+    ctx.fillStyle = '#eeebff'; ctx.fill();
+    ctx.fillStyle = '#7a7a90'; ctx.font = '600 36px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Thêm lựa chọn nhé!', c, c);
+    return;
+  }
+
+  const total = opts.reduce((s, o) => s + weightOf(o), 0);
+  let start = rotation - Math.PI / 2; // bắt đầu từ đỉnh (nơi đặt kim)
+  opts.forEach((o, i) => {
+    const ang = weightOf(o) / total * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(c, c);
+    ctx.arc(c, c, R, start, start + ang); ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
+
+    // Chữ trên ô
+    ctx.save();
+    ctx.translate(c, c); ctx.rotate(start + ang / 2);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    const size = Math.max(18, Math.min(38, 260 / Math.max(opts.length, 4) + 14));
+    ctx.font = `700 ${size}px system-ui`;
+    let label = o.name;
+    const maxW = R - 70;
+    while (ctx.measureText(label).width > maxW && label.length > 1) label = label.slice(0, -1);
+    if (label !== o.name) label = label.slice(0, -1) + '…';
+    ctx.fillText(label, R - 24, 0);
+    ctx.restore();
+    start += ang;
+  });
+
+  // Tâm vòng quay
+  ctx.beginPath(); ctx.arc(c, c, 46, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.font = '40px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🎯', c, c + 2);
+}
+
+// ===== Quay =====
+function spin() {
+  if (spinning) return;
+  if (state.options.length === 0) return toast('Hãy thêm ít nhất 2 lựa chọn nhé 🙂');
+  if (state.options.length === 1) return toast('Chỉ có 1 lựa chọn thì… chọn nó luôn đi 😄');
+
+  const idx = pickIndex();
+  // Tính góc giữa ô trúng thưởng (có lệch ngẫu nhiên nhẹ cho tự nhiên)
+  const total = state.options.reduce((s, o) => s + weightOf(o), 0);
+  let before = 0;
+  for (let i = 0; i < idx; i++) before += weightOf(state.options[i]);
+  const segAng = weightOf(state.options[idx]) / total * Math.PI * 2;
+  const offset = (before / total) * Math.PI * 2 + segAng * (0.15 + randomFloat() * 0.7);
+
+  // Góc đích sao cho điểm "offset" nằm ngay dưới kim (đỉnh)
+  const TWO_PI = Math.PI * 2;
+  const current = ((rotation % TWO_PI) + TWO_PI) % TWO_PI;
+  let target = (TWO_PI - offset) % TWO_PI;
+  let delta = target - current; if (delta < 0) delta += TWO_PI;
+  delta += TWO_PI * (5 + Math.floor(randomFloat() * 3)); // quay thêm 5–7 vòng
+
+  const from = rotation, dur = 4200, t0 = performance.now();
+  spinning = true; spinBtn.disabled = true;
+  let lastTick = Math.floor(from / (TWO_PI / state.options.length));
+
+  function frame(now) {
+    const t = Math.min(1, (now - t0) / dur);
+    const ease = 1 - Math.pow(1 - t, 4); // chậm dần
+    rotation = from + delta * ease;
+    drawWheel();
+    // Âm "tích" khi kim qua mỗi ô (đơn giản theo số ô)
+    const tick = Math.floor(rotation / (TWO_PI / state.options.length));
+    if (tick !== lastTick) { lastTick = tick; click(); }
+    if (t < 1) requestAnimationFrame(frame);
+    else finish(idx);
+  }
+  requestAnimationFrame(frame);
+}
+
+function finish(idx) {
+  spinning = false; spinBtn.disabled = false;
+  const chosen = state.options[idx];
+  $('resultText').textContent = chosen.name;
+  $('overlay').classList.add('show');
+  confetti();
+  if (navigator.vibrate) navigator.vibrate(80);
+
+  const d = new Date();
+  state.history.unshift({ name: chosen.name, time: d.toTimeString().slice(0, 5) });
+  state.history = state.history.slice(0, 10);
+  if (state.removeAfter) state.options.splice(idx, 1);
+  save();
+}
+
+// ===== Âm thanh tích nhỏ =====
+let audioCtx;
+function click() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = 900; g.gain.value = 0.04;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.025);
+  } catch (e) {}
+}
+
+// ===== Pháo giấy =====
+function confetti() {
+  const cv = $('confetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const parts = Array.from({ length: 140 }, () => ({
+    x: cv.width / 2, y: cv.height / 2,
+    vx: (randomFloat() - .5) * 16, vy: randomFloat() * -16 - 4,
+    s: 6 + randomFloat() * 6, r: randomFloat() * 6, vr: (randomFloat() - .5) * .4,
+    c: COLORS[Math.floor(randomFloat() * COLORS.length)]
+  }));
+  const t0 = performance.now();
+  (function step(now) {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    parts.forEach(p => {
+      p.vy += 0.35; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r);
+      cx.fillStyle = p.c; cx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); cx.restore();
+    });
+    if (now - t0 < 2500) requestAnimationFrame(step);
+    else cx.clearRect(0, 0, cv.width, cv.height);
+  })(t0);
+}
+
+// ===== Sự kiện =====
+function autoGrow() { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; }
+input.addEventListener('input', autoGrow);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); addFromInput(); }
+});
+$('addBtn').onclick = addFromInput;
+spinBtn.onclick = spin;
+$('clearBtn').onclick = () => {
+  if (!state.options.length) return;
+  state.options = []; save(); render(); toast('Đã xoá hết lựa chọn');
+};
+$('clearHistBtn').onclick = () => { state.history = []; save(); render(); };
+$('removeAfter').onchange = e => { state.removeAfter = e.target.checked; save(); };
+$('useWeight').onchange = e => { state.useWeight = e.target.checked; save(); render(); };
+const closeResult = () => { $('overlay').classList.remove('show'); render(); };
+$('closeBtn').onclick = closeResult;
+$('againBtn').onclick = () => { closeResult(); setTimeout(spin, 150); };
+$('overlay').onclick = e => { if (e.target.id === 'overlay') closeResult(); };
+
+load(); render();
+</script>
+</body>
+</html>
