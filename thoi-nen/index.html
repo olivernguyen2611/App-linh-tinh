@@ -19,10 +19,6 @@
   h1 { margin: 0 0 6px; font-size: clamp(1.4rem, 5vw, 2.2rem); text-align: center; color: var(--gold);
     text-shadow: 0 0 18px rgba(255,200,100,.5); }
   .hint { color: var(--muted); font-size: .95rem; text-align: center; margin: 0 0 14px; min-height: 1.3em; max-width: 420px; }
-  #wish { width: min(420px, 100%); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18);
-    color: var(--ink); border-radius: 14px; padding: 12px 14px; font: inherit; font-size: 1rem; resize: none;
-    outline: none; text-align: center; }
-  #wish:focus { border-color: var(--gold); }
   .btns { display: flex; gap: 10px; margin: 12px 0 18px; flex-wrap: wrap; justify-content: center; }
   button { font: inherit; font-weight: 600; border: 0; border-radius: 999px; padding: 11px 20px; cursor: pointer;
     background: linear-gradient(135deg, #ffcf6b, #ff9a5a); color: #2a1600; box-shadow: 0 6px 20px rgba(255,150,70,.3); }
@@ -62,11 +58,9 @@
   @keyframes smoke { to { transform: translate(var(--dx), -140px) scale(4); opacity: 0; } }
 
   /* Flying wish */
-  .flying { position: fixed; left: 50%; z-index: 5; pointer-events: none; text-align: center; max-width: 80vw;
-    font-size: 1.15rem; font-weight: 600; color: #fff7dc; white-space: pre-wrap;
-    text-shadow: 0 0 10px #ffd37a, 0 0 24px #ff9a5a; transform: translate(-50%, 0); }
-  .flying::before { content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px;
-    border-radius: 50%; background: #fff; box-shadow: 0 0 20px 8px #ffd37a; opacity: var(--core, 0); }
+  .flying { position: fixed; left: 50%; z-index: 5; pointer-events: none; width: 14px; height: 14px;
+    border-radius: 50%; background: #fff; box-shadow: 0 0 16px 6px #ffd37a, 0 0 40px 16px rgba(255,154,90,.6);
+    transform: translate(-50%, -50%); }
 
   #final { position: fixed; left: 0; right: 0; bottom: calc(30px + env(safe-area-inset-bottom)); text-align: center;
     padding: 0 16px; opacity: 0; transition: opacity 1.2s; pointer-events: none; }
@@ -82,8 +76,7 @@
 
 <div id="stage">
   <h1>🎂 Chúc Mừng Sinh Nhật 🎂</h1>
-  <p class="hint" id="hint">Nhắm mắt, ước một điều, rồi thổi nến nhé!</p>
-  <textarea id="wish" rows="2" maxlength="120" placeholder="Viết điều ước của bạn (không bắt buộc)…"></textarea>
+  <p class="hint" id="hint">Nhắm mắt, ước thầm một điều, rồi thổi nến nhé!</p>
   <div class="btns">
     <button id="micBtn">🎤 Bật micro để thổi</button>
   </div>
@@ -226,9 +219,8 @@
   }
 
   function flyWish() {
-    const text = $('#wish').value.trim() || 'Điều ước bí mật 🤫';
     const r = $('.flame-box').getBoundingClientRect();
-    const el = document.createElement('div'); el.className = 'flying'; el.textContent = text;
+    const el = document.createElement('div'); el.className = 'flying';
     document.body.appendChild(el);
     const startY = r.top - 10;
     const target = { x: W * (.2 + Math.random() * .6), y: H * (.12 + Math.random() * .25) };
@@ -240,15 +232,13 @@
       skyLift = e;
       const x = W / 2 + (target.x - W / 2) * e + Math.sin(p * 9) * 18 * (1 - p);
       const y = startY + (target.y - startY) * e;
-      const scale = p < .7 ? 1 : 1 - (p - .7) / .3 * .95;
+      const scale = 1 + Math.sin(p * Math.PI) * .6;
       el.style.left = x + 'px'; el.style.top = y + 'px';
       el.style.transform = `translate(-50%,-50%) scale(${scale})`;
-      el.style.color = `rgba(255,247,220,${p < .7 ? 1 : 1 - (p - .7) / .3})`;
-      el.style.setProperty('--core', Math.min(1, p * 1.5));
       if (p < 1) requestAnimationFrame(step);
       else {
         el.remove();
-        wishStars.push({ x: target.x, y: target.y, p: Math.random() * 6, k: .1, text });
+        wishStars.push({ x: target.x, y: target.y, p: Math.random() * 6, k: .1 });
         for (let i = 0; i < 3; i++) setTimeout(shoot, i * 350);
         $('#finalText').textContent = '✨ Điều ước đã thành một vì sao trên trời ✨';
         final.classList.add('show');
@@ -261,8 +251,7 @@
     stage.classList.remove('up');
     cake.classList.remove('out');
     glow.style.opacity = 1;
-    $('#wish').value = '';
-    hint.textContent = listening ? 'Ước thêm điều nữa rồi thổi nhé! 💨' : 'Nhắm mắt, ước một điều, rồi thổi nến nhé!';
+    hint.textContent = listening ? 'Ước thêm điều nữa rồi thổi nhé! 💨' : 'Nhắm mắt, ước thầm một điều, rồi thổi nến nhé!';
     const t0 = performance.now();
     (function down(now) { const p = Math.min(1, (now - t0) / 2000); skyLift = 1 - p; if (p < 1) requestAnimationFrame(down); })(t0);
     setTimeout(() => { lit = true; }, 1200);
